@@ -1,0 +1,34 @@
+name = "ai-novel"
+main = "workers/index.ts"
+compatibility_date = "2026-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Cron Trigger: 60分間隔で章を1つ進める（毎時 00 分）
+# ai-roundtable は 15分間隔、ai-novel は意図的に長くして無料枠の合算消費を抑える
+[triggers]
+crons = ["0 * * * *"]
+
+# D1 database
+# 初回セットアップ:
+#   wrangler d1 create ai-novel
+# で発行された database_id をここに貼る
+[[d1_databases]]
+binding = "DB"
+database_name = "ai-novel"
+database_id = "e1b3eb5d-ca89-4a9d-a97f-c10d18b70c4e"
+migrations_dir = "workers/migrations"
+
+# 静的アセット（Phase 3 でフロントを ./dist に置く。それまでは空ディレクトリでOK）
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# Secrets は wrangler secret put で設定:
+#   wrangler secret put GEMINI_API_KEY
+#   wrangler secret put GROQ_API_KEY
+#   wrangler secret put LINE_CHANNEL_TOKEN
+#   wrangler secret put LINE_USER_ID
+
+[vars]
+ENVIRONMENT = "production"

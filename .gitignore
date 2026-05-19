@@ -1,0 +1,15 @@
+node_modules
+dist
+.wrangler
+.env
+.env.local
+.dev.vars
+data/runs
+*.log
+# tsc -b の中間出力（noEmit にしているが、過去の build artifacts が残ることがある）
+workers/**/*.js
+scripts/**/*.js
+prompts/**/*.js
+src/**/*.js
+tsconfig.tsbuildinfo
+.secrets.tmp.json

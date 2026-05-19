@@ -1,0 +1,42 @@
+/* 色設計: ai-roundtable のダーク基調を継承しつつ、紙の質感をほのかに */
+:root {
+  color-scheme: dark;
+  --bg: #1a1814;          /* オフブラック、ほんのり茶色寄り（紙の影） */
+  --bg-elev: #25221d;     /* 一段上、章カードの背景 */
+  --border: #36322b;
+  --text: #e8e4dc;        /* オフホワイト、紙色 */
+  --text-dim: #908a7e;
+  --accent: #c8a96a;      /* 薄い金。タイトル・編集者の印 */
+  --accent-soft: rgba(200, 169, 106, 0.15);
+  --link: #b8c4d8;
+  font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'YuMincho', serif;
+  font-feature-settings: "palt";
+  line-height: 1.85;
+  background: var(--bg);
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--text);
+}
+
+button {
+  font-family: inherit;
+}

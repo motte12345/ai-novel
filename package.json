@@ -1,0 +1,35 @@
+{
+  "name": "ai-novel",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "relay": "tsx scripts/run-relay.ts",
+    "worker:dev": "node scripts/ensure-dist.mjs && wrangler dev --test-scheduled",
+    "worker:deploy": "npm run build && wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply ai-novel --local",
+    "db:migrate:remote": "wrangler d1 migrations apply ai-novel --remote",
+    "db:console:local": "wrangler d1 execute ai-novel --local --command",
+    "db:console:remote": "wrangler d1 execute ai-novel --remote --command"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251201.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "dotenv": "^16.4.7",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "wrangler": "^4.90.0"
+  }
+}
