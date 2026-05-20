@@ -5,8 +5,11 @@
  */
 import wordsJson from '../prompts/words.json';
 import { handleArchive, handleCurrent, handleRecent, handleStory } from './api/handlers.js';
+import { handleStoryOgHtml } from './api/og-html.js';
+import { handleRss } from './api/rss.js';
 import { handleSitemap } from './api/sitemap.js';
 import { advanceOneChapter } from './lib/chapter-runner.js';
+import { isBot } from './lib/bot-ua.js';
 import { DB } from './lib/db.js';
 import { notifyOnce } from './lib/line-notify.js';
 import type { WordsDict } from './lib/relay.js';
@@ -33,6 +36,9 @@ export default {
     if (path === '/sitemap.xml') {
       return handleSitemap(db);
     }
+    if (path === '/rss.xml' || path === '/feed.xml') {
+      return handleRss(db);
+    }
     if (path === '/api/current') {
       return handleCurrent(db);
     }
@@ -53,7 +59,14 @@ export default {
       });
     }
 
-    // 静的アセット（フロント SPA は Phase 3 で実装）
+    // SNS/検索エンジン bot で /story/:id にアクセスがあった場合、
+    // 作品情報を埋めた OGP メタタグ入り HTML を返す（シェア時に作品タイトルが表示される）
+    const storyPageMatch = path.match(/^\/story\/(\d+)\/?$/);
+    if (storyPageMatch && isBot(request.headers.get('user-agent'))) {
+      return handleStoryOgHtml(db, Number(storyPageMatch[1]));
+    }
+
+    // 静的アセット（SPA fallback は wrangler.toml の single-page-application 設定で処理）
     return env.ASSETS.fetch(request);
   },
 
