@@ -5,6 +5,7 @@
  */
 import wordsJson from '../prompts/words.json';
 import { handleArchive, handleCurrent, handleRecent, handleStory } from './api/handlers.js';
+import { handleSitemap } from './api/sitemap.js';
 import { advanceOneChapter } from './lib/chapter-runner.js';
 import { DB } from './lib/db.js';
 import { notifyOnce } from './lib/line-notify.js';
@@ -29,6 +30,9 @@ export default {
     const path = url.pathname;
     const db = new DB(env.DB);
 
+    if (path === '/sitemap.xml') {
+      return handleSitemap(db);
+    }
     if (path === '/api/current') {
       return handleCurrent(db);
     }
