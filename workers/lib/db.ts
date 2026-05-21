@@ -29,6 +29,16 @@ export interface StoryRow {
   atmosphere: string | null;
 }
 
+/** archive フィルタ用。各軸 1 つの値だけ指定可能（null/undefined はスキップ） */
+export interface TagFilters {
+  genre?: string | null;
+  tone?: string | null;
+  aftertaste?: string | null;
+  plot_arc?: string | null;
+  theme?: string | null;
+  atmosphere?: string | null;
+}
+
 export interface ChapterRow {
   id: number;
   story_id: number;
@@ -78,6 +88,71 @@ export class DB {
       .bind(cursor, limit)
       .all<StoryRow>();
     return result.results ?? [];
+  }
+
+  /**
+   * タグでフィルタした archive。
+   * 各カラム値はカンマ区切り（例: "明るい,静か"）なので、',' || value || ',' で囲って
+   * '%,検索値,%' に LIKE することで部分一致のミスマッチを避ける。
+   */
+  async getArchiveFiltered(
+    cursor: number,
+    limit: number,
+    filters: TagFilters,
+  ): Promise<StoryRow[]> {
+    const clauses: string[] = [`status = 'completed'`, `id < ?`];
+    const binds: (string | number)[] = [cursor];
+
+    const cols: Array<keyof TagFilters> = [
+      'genre',
+      'tone',
+      'aftertaste',
+      'plot_arc',
+      'theme',
+      'atmosphere',
+    ];
+    for (const col of cols) {
+      const v = filters[col];
+      if (v) {
+        clauses.push(`',' || ${col} || ',' LIKE ?`);
+        binds.push(`%,${v},%`);
+      }
+    }
+
+    binds.push(limit);
+    const sql = `SELECT * FROM stories WHERE ${clauses.join(' AND ')} ORDER BY id DESC LIMIT ?`;
+    const result = await this.d1.prepare(sql).bind(...binds).all<StoryRow>();
+    return result.results ?? [];
+  }
+
+  /**
+   * 各タグ軸の値ごとの作品数を返す（フィルタ UI 用）。
+   * カンマ区切り値は分解せず、生のままカウントする → フロント側で再集計しても良いが、
+   * 軸ごとの「現状の値分布」を返すシンプルな実装で十分。
+   *
+   * 戻り値: { genre: [{value, count}], tone: [...], ... }
+   */
+  async getTagCounts(): Promise<Record<string, Array<{ value: string; count: number }>>> {
+    const out: Record<string, Array<{ value: string; count: number }>> = {};
+    const cols = ['genre', 'tone', 'aftertaste', 'plot_arc', 'theme', 'atmosphere'];
+    for (const col of cols) {
+      const result = await this.d1
+        .prepare(
+          `SELECT ${col} as value, COUNT(*) as count FROM stories WHERE status = 'completed' AND ${col} IS NOT NULL GROUP BY ${col} ORDER BY count DESC`,
+        )
+        .all<{ value: string; count: number }>();
+      // カンマ区切りを分解して再集計
+      const merged = new Map<string, number>();
+      for (const r of result.results ?? []) {
+        for (const v of r.value.split(',').map((s) => s.trim()).filter(Boolean)) {
+          merged.set(v, (merged.get(v) ?? 0) + r.count);
+        }
+      }
+      out[col] = Array.from(merged.entries())
+        .map(([value, count]) => ({ value, count }))
+        .sort((a, b) => b.count - a.count);
+    }
+    return out;
   }
 
   /**

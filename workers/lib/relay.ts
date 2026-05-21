@@ -43,21 +43,31 @@ export interface StoryLite {
   atmosphere?: string | null;
 }
 
+/** カンマ区切り文字列を ` / ` 区切りに整える（プロンプト/UI 表示用） */
+function formatTagValue(raw: string): string {
+  return raw
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .join(' / ');
+}
+
 /** タグセクションを user メッセージに埋め込むための文字列を組み立て */
 function buildTagSection(story: StoryLite): string {
   const lines: string[] = [];
-  if (story.genre) lines.push(`- ジャンル: **${story.genre}**`);
-  if (story.tone) lines.push(`- トーン: **${story.tone}**`);
-  if (story.aftertaste) lines.push(`- 読後感: **${story.aftertaste}**`);
-  if (story.plot_arc) lines.push(`- 展開: **${story.plot_arc}**`);
-  if (story.theme) lines.push(`- 主題: **${story.theme}**`);
-  if (story.atmosphere) lines.push(`- 雰囲気: **${story.atmosphere}**`);
+  if (story.genre) lines.push(`- ジャンル: **${formatTagValue(story.genre)}**`);
+  if (story.tone) lines.push(`- トーン: **${formatTagValue(story.tone)}**`);
+  if (story.aftertaste) lines.push(`- 読後感: **${formatTagValue(story.aftertaste)}**`);
+  if (story.plot_arc) lines.push(`- 展開: **${formatTagValue(story.plot_arc)}**`);
+  if (story.theme) lines.push(`- 主題: **${formatTagValue(story.theme)}**`);
+  if (story.atmosphere) lines.push(`- 雰囲気: **${formatTagValue(story.atmosphere)}**`);
   if (lines.length === 0) return '';
   return (
     `\n## この作品の指定（タイトルとは独立に抽選されている。整合に苦労してでもこれら全てを尊重すること）\n` +
     lines.join('\n') +
-    `\n\n組み合わせが意外なものでも、作家は **そのズレを物語の力に変える**。「SF × 牧歌的 × 復讐」のような組み合わせも、` +
-    `安易に丸めず、その不協和こそが個性として現れる物語にする。\n`
+    `\n\n複数の値が \` / \` で区切られている軸は、**それらの共存** を物語で実現する` +
+    `（「明るい / 静か」なら明るさと静けさが同居する、「愛 / 復讐」なら愛と復讐が絡む）。\n` +
+    `組み合わせが意外なものでも、作家は **そのズレを物語の力に変える**。安易に丸めず、不協和こそ個性として表現する。\n`
   );
 }
 
@@ -328,9 +338,27 @@ export interface StoryTags {
 /**
  * タイトルと独立に、ジャンル + 方向性5軸をランダム抽選する。
  * 「SF × 牧歌的 × 復讐」のような意図的なズレが予想外の物語を生む狙い。
+ *
+ * 各軸 1 個必須、`secondProb` の確率で 2 個目を追加（重複しない別の値）。
+ * 結果はカンマ区切り文字列で返す（DB に TEXT として保存しやすいため）。
  */
-export function generateStoryTags(words: WordsDict, rng: () => number = Math.random): StoryTags {
-  const pick = (arr: string[]) => arr[Math.floor(rng() * arr.length)];
+export function generateStoryTags(
+  words: WordsDict,
+  rng: () => number = Math.random,
+  secondProb = 0.25,
+): StoryTags {
+  const pick = (arr: string[]): string => {
+    const first = arr[Math.floor(rng() * arr.length)];
+    if (rng() < secondProb && arr.length > 1) {
+      // 2 個目: 1 個目と被らないものから選ぶ
+      let second: string;
+      do {
+        second = arr[Math.floor(rng() * arr.length)];
+      } while (second === first);
+      return `${first},${second}`;
+    }
+    return first;
+  };
   return {
     genre: pick(words.genre),
     tone: pick(words.tone),

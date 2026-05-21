@@ -8,17 +8,31 @@ interface Props {
 
 interface Tag {
   label: string;
-  value: string;
+  /** カンマ区切りの生値を配列化 */
+  values: string[];
+}
+
+/** DB の TEXT カラムはカンマ区切り。空文字や null を除いて配列化する */
+export function splitTagValues(raw: string | null): string[] {
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
 }
 
 function collectTags(story: Story): Tag[] {
   const tags: Tag[] = [];
-  if (story.genre) tags.push({ label: 'ジャンル', value: story.genre });
-  if (story.tone) tags.push({ label: 'トーン', value: story.tone });
-  if (story.aftertaste) tags.push({ label: '読後感', value: story.aftertaste });
-  if (story.plot_arc) tags.push({ label: '展開', value: story.plot_arc });
-  if (story.theme) tags.push({ label: '主題', value: story.theme });
-  if (story.atmosphere) tags.push({ label: '雰囲気', value: story.atmosphere });
+  const push = (label: string, raw: string | null) => {
+    const values = splitTagValues(raw);
+    if (values.length > 0) tags.push({ label, values });
+  };
+  push('ジャンル', story.genre);
+  push('トーン', story.tone);
+  push('読後感', story.aftertaste);
+  push('展開', story.plot_arc);
+  push('主題', story.theme);
+  push('雰囲気', story.atmosphere);
   return tags;
 }
 
@@ -28,12 +42,14 @@ export function StoryTags({ story, compact = false }: Props) {
 
   return (
     <div className={`story-tags ${compact ? 'compact' : ''}`}>
-      {tags.map((t) => (
-        <span key={t.label} className="tag-chip" title={t.label}>
-          {compact ? '' : <span className="tag-label">{t.label}</span>}
-          <span className="tag-value">{t.value}</span>
-        </span>
-      ))}
+      {tags.flatMap((t) =>
+        t.values.map((v) => (
+          <span key={`${t.label}:${v}`} className="tag-chip" title={t.label}>
+            {compact ? '' : <span className="tag-label">{t.label}</span>}
+            <span className="tag-value">{v}</span>
+          </span>
+        )),
+      )}
     </div>
   );
 }

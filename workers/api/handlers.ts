@@ -1,7 +1,29 @@
 /**
  * REST API ハンドラ。
  */
-import { DB } from '../lib/db.js';
+import { DB, type TagFilters } from '../lib/db.js';
+
+const TAG_KEYS: Array<keyof TagFilters> = [
+  'genre',
+  'tone',
+  'aftertaste',
+  'plot_arc',
+  'theme',
+  'atmosphere',
+];
+
+function parseTagFilters(url: URL): { filters: TagFilters; anyActive: boolean } {
+  const filters: TagFilters = {};
+  let anyActive = false;
+  for (const key of TAG_KEYS) {
+    const v = url.searchParams.get(key);
+    if (v && v.trim()) {
+      filters[key] = v.trim();
+      anyActive = true;
+    }
+  }
+  return { filters, anyActive };
+}
 
 const JSON_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -45,15 +67,27 @@ export async function handleRecent(db: DB, url: URL): Promise<Response> {
 }
 
 /**
- * GET /api/archive?cursor=N&limit=20
- * 完了 story のページネーション
+ * GET /api/archive?cursor=N&limit=20&genre=...&tone=...
+ * 完了 story のページネーション（タグフィルタ対応）
  */
 export async function handleArchive(db: DB, url: URL): Promise<Response> {
   const cursor = Number(url.searchParams.get('cursor') ?? '999999999');
   const limit = Math.min(Number(url.searchParams.get('limit') ?? '20'), 100);
-  const stories = await db.getArchive(cursor, limit);
+  const { filters, anyActive } = parseTagFilters(url);
+  const stories = anyActive
+    ? await db.getArchiveFiltered(cursor, limit, filters)
+    : await db.getArchive(cursor, limit);
   const nextCursor = stories.length === limit ? stories[stories.length - 1].id : null;
   return jsonResponse({ stories, next_cursor: nextCursor });
+}
+
+/**
+ * GET /api/tags
+ * 各タグ軸の値ごとの件数（フィルタ UI 用）
+ */
+export async function handleTags(db: DB): Promise<Response> {
+  const counts = await db.getTagCounts();
+  return jsonResponse({ counts });
 }
 
 /**

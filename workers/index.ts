@@ -4,7 +4,7 @@
  * - scheduled: 60分おきに1章進める
  */
 import wordsJson from '../prompts/words.json';
-import { handleArchive, handleCurrent, handleRecent, handleStory } from './api/handlers.js';
+import { handleArchive, handleCurrent, handleRecent, handleStory, handleTags } from './api/handlers.js';
 import { handleStoryOgHtml } from './api/og-html.js';
 import { handleRss } from './api/rss.js';
 import { handleSitemap } from './api/sitemap.js';
@@ -47,6 +47,9 @@ export default {
     }
     if (path === '/api/archive') {
       return handleArchive(db, url);
+    }
+    if (path === '/api/tags') {
+      return handleTags(db);
     }
     const storyMatch = path.match(/^\/api\/story\/(\d+)$/);
     if (storyMatch) {
