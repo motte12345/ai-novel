@@ -37,6 +37,11 @@
 - [x] robots.txt
 - [x] Workers + フロント統合デプロイ (`https://ai-novel.dryad-ggl.workers.dev`)
 
+### 機能拡張候補（タグ機能の延長）
+- [ ] **archive のタグフィルタ UI**（`/api/archive?genre=...&tone=...` のクエリ対応 + フロントでフィルタチップ）
+- [ ] タグごとの件数集計（`/api/tags` で各軸の出現数を返す）
+- [ ] 「複数指定」サポート（各軸 0〜2 個まで指定可能に。現状は単一）
+
 ### Phase 3 残作業
 - [ ] **`novel.simtool.dev` のサブドメイン割当**（Cloudflare ダッシュボードで Workers Routes 設定。ユーザー作業）
 - [ ] OGP 画像生成（共通方式 `scripts/generate-ogp.mjs`、ogp.png 配置）

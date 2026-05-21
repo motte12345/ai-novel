@@ -12,6 +12,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadEnv } from 'dotenv';
 import {
+  generateStoryTags,
   generateTitle,
   parseEditorOutput,
   runOneChapter,
@@ -21,6 +22,7 @@ import {
   type EditorOutput,
   type GeneratedTitle,
   type PrevChapter,
+  type StoryTags,
   type WordsDict,
 } from '../workers/lib/relay.js';
 import type { ProviderEnv } from '../workers/lib/providers.js';
@@ -47,7 +49,7 @@ interface ChapterResult {
 }
 
 interface RunResult {
-  story: GeneratedTitle & { id: number };
+  story: GeneratedTitle & { id: number } & Partial<StoryTags>;
   started_at: number;
   completed_at: number;
   chapters: ChapterResult[];
@@ -88,10 +90,14 @@ async function main() {
   const args = process.argv.slice(2);
   const words = loadWords();
   const title = resolveTitle(words, args);
+  const tags = generateStoryTags(words);
 
   console.log(`\n=========================================`);
   console.log(`Story: 「${title.raw_title}」`);
   console.log(`  word_a=${title.word_a} / word_b=${title.word_b} / pattern=${title.pattern}`);
+  console.log(
+    `  tags: ${tags.genre} / ${tags.tone} / ${tags.aftertaste} / ${tags.plot_arc} / ${tags.theme} / ${tags.atmosphere}`,
+  );
   console.log(`=========================================`);
 
   const startedAt = Date.now();
@@ -99,7 +105,7 @@ async function main() {
   let editor: EditorOutput | null = null;
   let editorRaw: string | null = null;
 
-  const story = { id: 0, raw_title: title.raw_title };
+  const story = { id: 0, raw_title: title.raw_title, ...tags };
 
   for (let i = 1; i <= TOTAL_CHAPTERS; i++) {
     const writer = WRITER_ROTATION[i - 1];
@@ -156,7 +162,7 @@ async function main() {
   }
 
   const result: RunResult = {
-    story: { id: 0, ...title },
+    story: { id: 0, ...title, ...tags },
     started_at: startedAt,
     completed_at: Date.now(),
     chapters,

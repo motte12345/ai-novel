@@ -10,6 +10,7 @@ import { DB } from './db.js';
 import { notifyOnce } from './line-notify.js';
 import type { ProviderEnv } from './providers.js';
 import {
+  generateStoryTags,
   generateTitle,
   parseEditorOutput,
   runOneChapter,
@@ -46,11 +47,18 @@ export interface ChapterResult {
 async function createNewStory(db: DB, words: WordsDict, now: number): Promise<number | null> {
   for (let i = 0; i < 10; i++) {
     const title = generateTitle(words);
+    const tags = generateStoryTags(words);
     const id = await db.createStory({
       raw_title: title.raw_title,
       word_a: title.word_a,
       word_b: title.word_b,
       pattern: title.pattern,
+      genre: tags.genre,
+      tone: tags.tone,
+      aftertaste: tags.aftertaste,
+      plot_arc: tags.plot_arc,
+      theme: tags.theme,
+      atmosphere: tags.atmosphere,
       now,
     });
     if (id !== null) return id;
@@ -106,7 +114,16 @@ export async function advanceOneChapter(ctx: RunContext): Promise<ChapterResult>
   let result;
   try {
     result = await runOneChapter({
-      story: { id: active.id, raw_title: active.raw_title },
+      story: {
+        id: active.id,
+        raw_title: active.raw_title,
+        genre: active.genre,
+        tone: active.tone,
+        aftertaste: active.aftertaste,
+        plot_arc: active.plot_arc,
+        theme: active.theme,
+        atmosphere: active.atmosphere,
+      },
       chapterNo: nextChapterNo,
       prevChapters: prevForRelay,
       env,

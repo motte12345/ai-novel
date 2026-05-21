@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
+import { StoryTags } from '../components/StoryTags';
 import type { Story } from '../types';
 
 const PAGE_SIZE = 30;
@@ -60,7 +61,10 @@ export function ArchivePage() {
           <li key={s.id} className="archive-item">
             <Link to={`/story/${s.id}`} className="archive-link">
               <span className="archive-no">No.{String(s.id).padStart(4, '0')}</span>
-              <span className="archive-title">{s.final_title ?? s.raw_title}</span>
+              <span className="archive-title">
+                {s.final_title ?? s.raw_title}
+                <StoryTags story={s} compact />
+              </span>
               {s.pen_name && <span className="archive-pen">{s.pen_name}</span>}
             </Link>
           </li>

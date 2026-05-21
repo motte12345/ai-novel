@@ -265,6 +265,50 @@
   border: 1px solid var(--border);
 }
 
+/* ===== Story Tags ===== */
+
+.story-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.story-tags.compact {
+  gap: 4px;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--bg-elev);
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.story-tags.compact .tag-chip {
+  padding: 2px 7px;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.tag-label {
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.tag-value {
+  font-weight: 500;
+}
+
 /* 章プログレスゲージ */
 .chapter-gauge {
   display: flex;

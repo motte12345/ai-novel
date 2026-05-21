@@ -34,6 +34,31 @@ export interface PrevChapter {
 export interface StoryLite {
   id: number;
   raw_title: string; // 「ランプと夕暮れ」のような単語ペア合成タイトル
+  // タグ（タイトルと独立に抽選される。null の場合はプロンプトに含めない）
+  genre?: string | null;
+  tone?: string | null;
+  aftertaste?: string | null;
+  plot_arc?: string | null;
+  theme?: string | null;
+  atmosphere?: string | null;
+}
+
+/** タグセクションを user メッセージに埋め込むための文字列を組み立て */
+function buildTagSection(story: StoryLite): string {
+  const lines: string[] = [];
+  if (story.genre) lines.push(`- ジャンル: **${story.genre}**`);
+  if (story.tone) lines.push(`- トーン: **${story.tone}**`);
+  if (story.aftertaste) lines.push(`- 読後感: **${story.aftertaste}**`);
+  if (story.plot_arc) lines.push(`- 展開: **${story.plot_arc}**`);
+  if (story.theme) lines.push(`- 主題: **${story.theme}**`);
+  if (story.atmosphere) lines.push(`- 雰囲気: **${story.atmosphere}**`);
+  if (lines.length === 0) return '';
+  return (
+    `\n## この作品の指定（タイトルとは独立に抽選されている。整合に苦労してでもこれら全てを尊重すること）\n` +
+    lines.join('\n') +
+    `\n\n組み合わせが意外なものでも、作家は **そのズレを物語の力に変える**。「SF × 牧歌的 × 復讐」のような組み合わせも、` +
+    `安易に丸めず、その不協和こそが個性として現れる物語にする。\n`
+  );
 }
 
 /**
@@ -47,7 +72,8 @@ function buildHistory(
   writer: Writer,
   chapterNo: number,
 ): Message[] {
-  let body = `# 短編タイトル: 「${story.raw_title}」\n`;
+  const tagSection = buildTagSection(story);
+  let body = `# 短編タイトル: 「${story.raw_title}」\n${tagSection}`;
 
   if (writer === 'editor') {
     body += `\n全${STORY_CHAPTERS}章のリレー執筆が完了しました。以下が本文です。\n\n`;
@@ -91,34 +117,41 @@ function buildHistory(
 
 /**
  * 全6章を起承転結に割り当てたステージ指示。
- * - 1章: 起 — 場面と最初の人物の導入
- * - 2-3章: 承 — 人物追加・関係の進展
- * - 4-5章: 転 — 何かが動く、決断や出来事
- * - 6章: 結 — 余韻を残して閉じる
+ * - 1章: 起 — 場面 + 緊張の種を蒔く
+ * - 2-3章: 承 — 人物追加・関係の深化・秘密の片鱗
+ * - 4-5章: 転 — 決定的な出来事
+ * - 6章: 結 — 答えを出しすぎず、余韻のある一行で
  */
 function stageHintForChapter(chapterNo: number): string {
   if (chapterNo === 1) {
     return (
-      `**第1章: 物語の始まり（起）**\n` +
-      `- 主要な人物を1人（必要なら2人）を導入し、場面・時代・季節を読者に分からせる\n` +
-      `- 物語の核となる**情景や問い**を一つ、さりげなく置く\n` +
-      `- 結末は提示しない。読者に「この先何が起きるか」と思わせる入り`
+      `**第1章: 物語の始まり（起）— 緊張の種を蒔く**\n` +
+      `- 主要な人物を1人（必要なら2人）導入し、場面・時代・季節を分からせる\n` +
+      `- **「何かが普通でない」「何か抱えている」**気配を1つ置く（違和感・期待・後悔・隠し事の影など）\n` +
+      `- タイトルの単語2つを、**意味の核**として序盤から提示する\n` +
+      `- 結末は提示しない。読者が「この先何が起きるか」と前のめりになる入りに`
     );
   }
   if (chapterNo === 2 || chapterNo === 3) {
     return (
-      `**第${chapterNo}章: 展開（承）**\n` +
-      `- 第1章の人物と場面を受け継ぎつつ、**もう一人の人物が登場してもよい**（必須ではない）\n` +
-      `- 人物同士のやりとり・台詞で関係を見せる\n` +
-      `- 状況や心情に**小さな進展**を入れる（何も起きない章にしない）`
+      `**第${chapterNo}章: 展開（承）— 関係と秘密の深化**\n` +
+      `- 第1章で蒔いた**緊張の種**を育てる（人物の抱えるものをもう一段、見せる）\n` +
+      `- 新しい人物が登場してもよい。登場するなら、**ただの脇役にしない**（その人物にも事情を持たせる）\n` +
+      `- 台詞・対話で**人物の関係性に陰影**を作る。表面的な「優しいやりとり」だけで終わらせない\n` +
+      `- 何も起きない章は失敗。**小さな決断・小さな波紋**を必ず入れる`
     );
   }
   if (chapterNo === 4 || chapterNo === 5) {
     return (
-      `**第${chapterNo}章: 転換（転）**\n` +
-      `- ここまでの均衡を**少し揺らす**。決断・気づき・出来事・関係の変化、いずれかを入れる\n` +
-      `- 派手な事件である必要はない。**静かな変化**で十分（手紙が届く、誰かが去る、何かを思い出す、など）\n` +
-      `- 最終章への伏線・余韻を意識する`
+      `**第${chapterNo}章: 転換（転）— 決定的な出来事**\n` +
+      `- ここまでの均衡を**確かに崩す**。読者の予想を1回は裏切る\n` +
+      `- 以下のいずれかを必ず1つ入れる:\n` +
+      `  - **告白・打ち明け**（隠していたことが言葉になる）\n` +
+      `  - **決断・行動**（人物が何かを決め、動く）\n` +
+      `  - **発見**（手紙、忘れ物、失くしていたもの、知らなかった事実）\n` +
+      `  - **喪失・別離**（誰かが去る、何かが終わる）\n` +
+      `  - **再会・出会い直し**（前と違う関係で再び向き合う）\n` +
+      `- 派手な事件である必要はないが、**「何も起きない章」は禁止**`
     );
   }
   // chapterNo === 6 (FINAL_STORY_CHAPTER)
@@ -128,8 +161,10 @@ function stageHintForChapter(chapterNo: number): string {
     `  - **新しい登場人物・新しい場所・新しい設定を一切持ち込まない**\n` +
     `  - **既出の象徴・伏線・小道具を1つ拾って閉じる**\n` +
     `  - 同じ描写・同じ表現を繰り返さない（前章までの語彙を反復しない）\n` +
-    `  - 教訓化（「〜が大切だと感じた」「〜と知った」）禁止。**情景や仕草で締める**\n` +
-    `  - 全てを説明しきらず、**余韻を残す静かな終わり方**にする`
+    `  - 教訓化（「〜が大切だと感じた」「〜と知った」）禁止\n` +
+    `  - 「穏やかな時間を共有する」「優しく微笑む」のような**当たり障りない決着は禁止**\n` +
+    `  - 全てを説明しきらず、読者の心に**残る一行**で締める\n` +
+    `  - 救いでも喪失でも、**何らかの感情を読者に持ち帰らせる**`
   );
 }
 
@@ -160,8 +195,9 @@ export async function runOneChapter(input: RunChapterInput): Promise<RunChapterO
   const { primary, fallback } = getProviderAssignment(writer, env);
   const history = buildHistory(prevChapters, story, writer, chapterNo);
 
-  // 編集者は出力フォーマットが厳格なので低温、作家は表現に余裕を持たせる
-  const temperature = writer === 'editor' ? 0.6 : 0.9;
+  // 編集者は出力フォーマットが厳格なので低温、作家は表現の振れ幅を広げて穏当化を避ける
+  // ai-roundtable で 0.95 にして無難化が抜けた実績あり、ai-novel も 1.0 まで上げる
+  const temperature = writer === 'editor' ? 0.6 : 1.0;
   // Llama 系の tokenizer は日本語の頻出語を 1 token 化するので、token 制限が字数に直結しない。
   // PoC 観察: max_tokens=400 で実出力 411〜609字。
   // 目標 200〜300字に対し、max_tokens=300 で実出力 ~350字以内に収まる想定。
@@ -265,6 +301,12 @@ export interface WordsDict {
   noun_b: string[];
   title_patterns: string[];
   ng_words: string[];
+  genre: string[];
+  tone: string[];
+  aftertaste: string[];
+  plot_arc: string[];
+  theme: string[];
+  atmosphere: string[];
 }
 
 export interface GeneratedTitle {
@@ -272,6 +314,31 @@ export interface GeneratedTitle {
   word_a: string;
   word_b: string;
   pattern: string;
+}
+
+export interface StoryTags {
+  genre: string;
+  tone: string;
+  aftertaste: string;
+  plot_arc: string;
+  theme: string;
+  atmosphere: string;
+}
+
+/**
+ * タイトルと独立に、ジャンル + 方向性5軸をランダム抽選する。
+ * 「SF × 牧歌的 × 復讐」のような意図的なズレが予想外の物語を生む狙い。
+ */
+export function generateStoryTags(words: WordsDict, rng: () => number = Math.random): StoryTags {
+  const pick = (arr: string[]) => arr[Math.floor(rng() * arr.length)];
+  return {
+    genre: pick(words.genre),
+    tone: pick(words.tone),
+    aftertaste: pick(words.aftertaste),
+    plot_arc: pick(words.plot_arc),
+    theme: pick(words.theme),
+    atmosphere: pick(words.atmosphere),
+  };
 }
 
 /**

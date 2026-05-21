@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api';
+import { StoryTags } from '../components/StoryTags';
 import type { Chapter, Story } from '../types';
 
 const STORY_CHAPTERS = 6;
@@ -47,6 +48,7 @@ export function StoryPage() {
           <div className="story-title-raw">原題: {story.raw_title}</div>
         )}
         {story.pen_name && <div className="story-pen">著: {story.pen_name}</div>}
+        <StoryTags story={story} />
         <div className="story-meta">
           <span className={`status-pill ${story.status}`}>
             {story.status === 'active' ? '執筆中' : '完結'}

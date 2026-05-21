@@ -20,6 +20,13 @@ export interface StoryRow {
   started_at: number | null;
   completed_at: number | null;
   created_at: number;
+  // タグ（タイトルと独立に抽選される。既存作品は NULL）
+  genre: string | null;
+  tone: string | null;
+  aftertaste: string | null;
+  plot_arc: string | null;
+  theme: string | null;
+  atmosphere: string | null;
 }
 
 export interface ChapterRow {
@@ -83,19 +90,36 @@ export class DB {
     word_a: string;
     word_b: string;
     pattern: string;
+    genre: string | null;
+    tone: string | null;
+    aftertaste: string | null;
+    plot_arc: string | null;
+    theme: string | null;
+    atmosphere: string | null;
     now: number;
   }): Promise<number | null> {
     try {
       const result = await this.d1
         .prepare(
-          `INSERT INTO stories (raw_title, word_a, word_b, pattern, status, created_at) VALUES (?, ?, ?, ?, 'pending', ?)`,
+          `INSERT INTO stories (raw_title, word_a, word_b, pattern, genre, tone, aftertaste, plot_arc, theme, atmosphere, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
         )
-        .bind(input.raw_title, input.word_a, input.word_b, input.pattern, input.now)
+        .bind(
+          input.raw_title,
+          input.word_a,
+          input.word_b,
+          input.pattern,
+          input.genre,
+          input.tone,
+          input.aftertaste,
+          input.plot_arc,
+          input.theme,
+          input.atmosphere,
+          input.now,
+        )
         .run();
       const id = result.meta?.last_row_id;
       return typeof id === 'number' ? id : null;
     } catch (e) {
-      // UNIQUE 制約違反（同じ単語ペアが既に存在）の場合は null を返す
       console.warn('[db] createStory failed (likely duplicate word pair):', e);
       return null;
     }
